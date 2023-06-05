@@ -1,0 +1,4 @@
+if (CMAKE_BUILD_TYPE MATCHES "esp32doit-devkit-v1")
+    include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/esp32doit-devkit-v1/U8g2/src")
+    include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/esp32doit-devkit-v1/EncButton/src")
+endif()
