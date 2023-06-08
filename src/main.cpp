@@ -15,6 +15,7 @@ EncButton<EB_TICK, 34, 35, 32> encoder;
 Servo servo;
 
 volatile int servoPosition = 90;
+volatile int servoSpeed = 0;
 
 //volatile byte ledR = 255;
 //volatile byte ledG = 170;
@@ -35,7 +36,7 @@ void updateScreen() {
         u8g2.setDrawColor(1);
         u8g2.setFontMode(0);
 
-        u8g2.print(servoPosition);
+        u8g2.print(servoSpeed);
 
 //        u8g2.print("#");
 
@@ -86,32 +87,28 @@ void encoderTask(void* pvParam) {
         bool isUpdated = false;
 
         int step = 0;
-        int singleStep = 0;
         if (encoder.left()) {
-            step = -5;
-            singleStep = -1;
+            step = -1;
         } else if (encoder.right()) {
-            step = 5;
-            singleStep = 5;
+            step = 1;
         } else if (encoder.leftH()) {
-            step = -30;
-            singleStep = -1;
+            step = -5;
         } else if (encoder.rightH()) {
-            step = 30;
-            singleStep = 1;
+            step = 5;
         }
 
         if (step != 0) {
             isUpdated = true;
 
-            for (int i = 0; i < abs(step); i++) {
-                servoPosition = constrain(servoPosition + singleStep, 0, 180);
-
-                servo.write(servoPosition);
-                vTaskDelay(pdMS_TO_TICKS(2));
-
-                updateScreenAsync();
-            }
+            servoSpeed = constrain(servoSpeed + step, 0, 180);
+//            for (int i = 0; i < abs(step); i++) {
+//                servoPosition = constrain(servoPosition + singleStep, 0, 180);
+//
+//                servo.write(servoPosition);
+//                vTaskDelay(pdMS_TO_TICKS(2));
+//
+//                updateScreenAsync();
+//            }
         }
 
         if (isUpdated) {
@@ -134,6 +131,25 @@ void encoderTask(void* pvParam) {
 //    }
 //}
 
+[[noreturn]]
+void updateServoTask(void* pvParam) {
+    while (true) {
+        for (int i = 0; i <= 180; i += servoSpeed) {
+            servoPosition = constrain(i, 0, 180);
+
+            servo.write(servoPosition);
+            vTaskDelay(pdMS_TO_TICKS(5));
+        }
+
+        for (int i = 180; i >= 0; i -= servoSpeed) {
+            servoPosition = constrain(i, 0, 180);
+
+            servo.write(servoPosition);
+            vTaskDelay(pdMS_TO_TICKS(5));
+        }
+    }
+}
+
 void setup() {
     Serial.begin(9600);
 
@@ -150,6 +166,7 @@ void setup() {
 
     xTaskCreate(encoderTask, "encoder", CONFIG_ESP_MAIN_TASK_STACK_SIZE, nullptr, 1, &encoderTaskHandle);
     xTaskCreate(updateScreenTask, "update-screen", CONFIG_ESP_MAIN_TASK_STACK_SIZE, nullptr, 1, &updateScreenTaskHandle);
+    xTaskCreate(updateServoTask, "update-servo", CONFIG_ESP_MAIN_TASK_STACK_SIZE, nullptr, 1, nullptr);
 
     updateScreenAsync();
 }
