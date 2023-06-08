@@ -92,7 +92,7 @@ void encoderTask(void* pvParam) {
             singleStep = -1;
         } else if (encoder.right()) {
             step = 5;
-            singleStep = 5;
+            singleStep = 1;
         } else if (encoder.leftH()) {
             step = -30;
             singleStep = -1;
