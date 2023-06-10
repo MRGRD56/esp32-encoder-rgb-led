@@ -20,6 +20,7 @@ volatile byte selectedServoSetting = 0;
 
 volatile short servoStep = 0;
 volatile short servoDelay = 5;
+volatile short servoMaxAngle = 180;
 
 //volatile byte ledR = 255;
 //volatile byte ledG = 170;
@@ -45,8 +46,8 @@ void updateScreen() {
         u8g2.print("step");
 
         u8g2.setDrawColor(selectedServoSetting != 0);
-        u8g2.setFont(u8g2_font_spleen16x32_mf);
-        u8g2.setCursor(6, 52);
+//        u8g2.setFont(u8g2_font_spleen16x32_mf);
+        u8g2.setCursor(66, 16);
 
         u8g2.print(servoStep);
 
@@ -56,16 +57,32 @@ void updateScreen() {
 
         u8g2.setDrawColor(1);
         u8g2.setFont(u8g2_font_spleen8x16_mf);
-        u8g2.setCursor(6 + 60, 16);
+        u8g2.setCursor(6, 16 + 20);
         u8g2.print("delay");
 
         u8g2.setDrawColor(selectedServoSetting != 1);
-        u8g2.setFont(u8g2_font_spleen16x32_mf);
-        u8g2.setCursor(6 + 60, 52);
+//        u8g2.setFont(u8g2_font_spleen16x32_mf);
+        u8g2.setCursor(66, 16 + 20);
 
         u8g2.print(servoDelay);
 
         //----
+
+        //----
+
+        u8g2.setDrawColor(1);
+        u8g2.setFont(u8g2_font_spleen8x16_mf);
+        u8g2.setCursor(6, 16 + 20 + 20);
+        u8g2.print("angle");
+
+        u8g2.setDrawColor(selectedServoSetting != 2);
+//        u8g2.setFont(u8g2_font_spleen16x32_mf);
+        u8g2.setCursor(66, 16 + 20 + 20);
+
+        u8g2.print(servoMaxAngle);
+
+        //----
+
 
 //
 //        u8g2.setDrawColor(selectedLedPart != 1 && selectedLedPart != 3);
@@ -114,7 +131,7 @@ void encoderTask(void* pvParam) {
         if (encoder.click()) {
             isUpdated = true;
 
-            if (selectedServoSetting == 1) {
+            if (selectedServoSetting == 2) {
                 selectedServoSetting = 0;
             } else {
                 selectedServoSetting++;
@@ -139,6 +156,8 @@ void encoderTask(void* pvParam) {
                 servoStep = constrain(servoStep + step, 0, 180);
             } else if (selectedServoSetting == 1) {
                 servoDelay = constrain(servoDelay + step, 0, 1000);
+            } else if (selectedServoSetting == 2) {
+                servoMaxAngle = constrain(servoMaxAngle + step, 0, 180);
             }
 //            for (int i = 0; i < abs(step); i++) {
 //                servoPosition = constrain(servoPosition + singleStep, 0, 180);
@@ -173,14 +192,14 @@ void encoderTask(void* pvParam) {
 [[noreturn]]
 void updateServoTask(void* pvParam) {
     while (true) {
-        for (int i = 0; i <= 180; i += servoStep) {
+        for (int i = (180 - servoMaxAngle) / 2; i <= (180 - (180 - servoMaxAngle) / 2); i += servoStep) {
             servoPosition = constrain(i, 0, 180);
 
             servo.write(servoPosition);
             vTaskDelay(pdMS_TO_TICKS(servoDelay));
         }
 
-        for (int i = 180; i >= 0; i -= servoStep) {
+        for (int i = (180 - (180 - servoMaxAngle) / 2); i >= (180 - servoMaxAngle) / 2; i -= servoStep) {
             servoPosition = constrain(i, 0, 180);
 
             servo.write(servoPosition);
